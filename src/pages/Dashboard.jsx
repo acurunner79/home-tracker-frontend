@@ -1,0 +1,210 @@
+// client/src/pages/Dashboard.jsx
+import React, { useState, useEffect } from 'react';
+import Sidebar from '../components/layout/Sidebar';
+import TopBar from '../components/layout/TopBar';
+import ProjectCard from '../components/project/ProjectCard';
+import ProjectForm from '../components/project/ProjectForm';
+import ProjectPreview from '../components/project/ProjectPreview';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import StatsPage from './StatsPage';
+import { useProjects } from '../hooks/useProjects';
+
+const STAGE_LABELS = {
+  'not-started': 'Not Started',
+  'started':     'Started',
+  'on-hold':     'On Hold',
+  'completed':   'Completed',
+};
+
+function fmtMoney(v) {
+  return '$' + Number(v || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+function totalCost(mats) {
+  return (mats || []).reduce((s, m) => s + (parseFloat(m.cost) || 0), 0);
+}
+
+export default function Dashboard({ theme, toggleTheme }) {
+  const {
+    projects, loading, error, refetch,
+    createProject, updateProject, deleteProject,
+    uploadImages, deleteImage,
+  } = useProjects();
+
+  // 'stats' is the default/home page
+  const [activePage, setActivePage]       = useState('stats');
+  const [navState, setNavState]           = useState({ type: 'all', year: null, room: null });
+  const [stageFilter, setStageFilter]     = useState('all');
+  const [sidebarOpen, setSidebarOpen]     = useState(false);
+
+  const [showForm, setShowForm]               = useState(false);
+  const [editProject, setEditProject]         = useState(null);
+  const [previewProject, setPreviewProject]   = useState(null);
+  const [deleteTarget, setDeleteTarget]       = useState(null);
+
+  // Listen for new-project event from Sidebar button
+  useEffect(() => {
+    const handler = () => { setEditProject(null); setShowForm(true); };
+    window.addEventListener('ht:new-project', handler);
+    return () => window.removeEventListener('ht:new-project', handler);
+  }, []);
+
+  // ── Filtering ──────────────────────────────────────────────────────
+  const filtered = projects.filter(p => {
+    if (navState.type === 'year' && p.year !== navState.year) return false;
+    if (navState.type === 'room' && (p.year !== navState.year || p.room !== navState.room)) return false;
+    if (stageFilter !== 'all' && p.stage !== stageFilter) return false;
+    return true;
+  }).sort((a, b) =>
+    (b.year || '').localeCompare(a.year || '') ||
+    (b.createdAt || '').localeCompare(a.createdAt || '')
+  );
+
+  // ── Header text ────────────────────────────────────────────────────
+  let pageTitle = 'Dashboard';
+  let pageSubtitle = `${projects.length} project${projects.length !== 1 ? 's' : ''}`;
+
+  if (activePage === 'projects') {
+    if (navState.type === 'all') pageTitle = 'All Projects';
+    else if (navState.type === 'year') pageTitle = `${navState.year} Projects`;
+    else pageTitle = `${navState.room} — ${navState.year}`;
+    const totalSpend = filtered.reduce((s, p) => s + totalCost(p.materials), 0);
+    pageSubtitle = `${filtered.length} project${filtered.length !== 1 ? 's' : ''} · Total: ${fmtMoney(totalSpend)}`;
+  }
+
+  // ── Handlers ───────────────────────────────────────────────────────
+  const handleSave = async (data) => {
+    if (editProject?.id) return await updateProject(editProject.id, data);
+    return await createProject(data);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteProject(deleteTarget.id);
+    setDeleteTarget(null);
+    setPreviewProject(null);
+  };
+
+  const openAddProject = () => {
+    setEditProject(null);
+    setShowForm(true);
+  };
+
+  return (
+    <div className="app">
+      <Sidebar theme={theme} toggleTheme={toggleTheme}
+        projects={projects}
+        navState={navState}
+        setNavState={setNavState}
+        activePage={activePage}
+        setActivePage={setActivePage}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <div className="main">
+        <TopBar
+          title={pageTitle}
+          subtitle={pageSubtitle}
+          theme={theme}
+          toggleTheme={toggleTheme}
+          onAddProject={openAddProject}
+          onMenuToggle={() => setSidebarOpen(o => !o)}
+        />
+
+        {/* Stage filter — only on projects page */}
+        {activePage === 'projects' && (
+          <div className="filterbar">
+            <span className="filter-label">Stage:</span>
+            {['all', 'not-started', 'started', 'on-hold', 'completed'].map(s => (
+              <button
+                key={s}
+                className={`chip ${stageFilter === s ? 'active' : ''}`}
+                onClick={() => setStageFilter(s)}
+              >
+                {s === 'all' ? 'All' : STAGE_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ── Page content ── */}
+        {activePage === 'stats' ? (
+          <StatsPage
+            projects={projects}
+            onAddProject={openAddProject}
+            onNavigate={setActivePage}
+          />
+        ) : (
+          <div className="main-scroll">
+            {loading ? (
+              <div className="loading-state">
+                <div className="spinner" />
+                Loading projects…
+              </div>
+            ) : error ? (
+              <div className="error-banner" style={{ margin: '24px 0' }}>
+                ⚠ {error} —{' '}
+                <button className="btn btn-sm btn-ghost" onClick={refetch}>Retry</button>
+              </div>
+            ) : (
+              <div className="projects-grid">
+                {filtered.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">🔨</div>
+                    <div className="empty-title">No projects yet</div>
+                    <p className="empty-sub">Start tracking your home improvement projects.</p>
+                    <button className="btn btn-primary" onClick={openAddProject}>
+                      + Add First Project
+                    </button>
+                  </div>
+                ) : (
+                  filtered.map(p => (
+                    <ProjectCard
+                      key={p.id}
+                      project={p}
+                      onClick={() => setPreviewProject(p)}
+                      onEdit={() => { setEditProject(p); setShowForm(true); }}
+                      onDelete={() => setDeleteTarget(p)}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Project Form Modal */}
+      {showForm && (
+        <ProjectForm
+          project={editProject}
+          onSave={handleSave}
+          onClose={() => { setShowForm(false); setEditProject(null); }}
+          onUploadImages={uploadImages}
+          onDeleteImage={(imgId) => deleteImage(editProject?.id, imgId)}
+        />
+      )}
+
+      {/* Project Preview Modal */}
+      {previewProject && !showForm && (
+        <ProjectPreview
+          project={previewProject}
+          onClose={() => setPreviewProject(null)}
+          onEdit={() => { setEditProject(previewProject); setPreviewProject(null); setShowForm(true); }}
+          onDelete={() => setDeleteTarget(previewProject)}
+        />
+      )}
+
+      {/* Delete Confirm */}
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Project?"
+          message={`This will permanently delete "${deleteTarget.name}". This action cannot be undone.`}
+          confirmLabel="🗑 Delete"
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
