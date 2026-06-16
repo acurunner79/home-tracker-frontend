@@ -11,6 +11,39 @@ const api = axios.create({
   withCredentials: true,
 });
 
+export const AUTH_EXPIRED_EVENT = 'home-tracker:auth-expired';
+
+let authExpiredNotified = false;
+
+export function resetAuthExpiredNotice() {
+  authExpiredNotified = false;
+}
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const status = error.response?.status;
+    const url = error.config?.url || '';
+
+    const isLoginRequest = url.includes('/auth/login');
+    const isSessionCheck = url.includes('/auth/me');
+
+    if (status === 401 && !isLoginRequest && !isSessionCheck) {
+      if (!authExpiredNotified) {
+        authExpiredNotified = true;
+
+        window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT, {
+          detail: {
+            message: 'Your session expired. Please log in again.',
+          },
+        }));
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // ── Auth ──────────────────────────────────────────────────────────────
 export const login = (email, password) =>
   api.post('/auth/login', { email, password }).then(r => r.data);
