@@ -1,5 +1,5 @@
 // client/src/main.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 import Dashboard from './pages/Dashboard';
@@ -19,19 +19,24 @@ function App() {
   const [user, setUser] = useState(null);
   const [sessionMessage, setSessionMessage] = useState('');
 
-  useEffect(() => {
-    let active = true;
+const sessionCheckRef = useRef({
+  lastCheck: 0,
+  checking: false,
+});
 
-    async function checkAuth() {
-      try {
-        const data = await getMe();
-        if (active) setUser(data.user);
-      } catch {
-        if (active) setUser(null);
-      } finally {
-        if (active) setAuthLoading(false);
-      }
+useEffect(() => {
+  let active = true;
+
+  async function checkAuth() {
+    try {
+      const data = await getMe();
+      if (active) setUser(data.user);
+    } catch {
+      if (active) setUser(null);
+    } finally {
+      if (active) setAuthLoading(false);
     }
+  }
 
     checkAuth();
 
@@ -53,6 +58,48 @@ function App() {
       window.removeEventListener(AUTH_EXPIRED_EVENT, handleAuthExpired);
     };
   }, []);
+
+  useEffect(() => {
+  if (!user) return;
+
+  const validateSession = async () => {
+    const now = Date.now();
+
+    // Prevent excessive /auth/me calls during rapid clicks.
+    if (sessionCheckRef.current.checking) return;
+    if (now - sessionCheckRef.current.lastCheck < 5000) return;
+
+    sessionCheckRef.current.checking = true;
+    sessionCheckRef.current.lastCheck = now;
+
+    try {
+      await getMe();
+    } catch {
+      resetAuthExpiredNotice();
+      setSessionMessage('Your session expired. Please log in again.');
+      setUser(null);
+      setAuthLoading(false);
+    } finally {
+      sessionCheckRef.current.checking = false;
+    }
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      validateSession();
+    }
+  };
+
+  window.addEventListener('focus', validateSession);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  document.addEventListener('click', validateSession, true);
+
+  return () => {
+    window.removeEventListener('focus', validateSession);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.removeEventListener('click', validateSession, true);
+  };
+}, [user]);
 
   function handleLogin(userData) {
     resetAuthExpiredNotice();
