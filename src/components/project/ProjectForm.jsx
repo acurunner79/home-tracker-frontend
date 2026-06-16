@@ -105,50 +105,51 @@ export default function ProjectForm({ project, onSave, onClose, onUploadImages, 
   // };
 
 const handleFileChange = e => {
-const files = Array.from(e.target.files || []);
-e.target.value = '';
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
 
-if (!files.length) return;
+  if (!files.length) return;
 
-if (newFiles.length + files.length > MAX_IMAGES_PER_UPLOAD) {
-  setError(`You can upload up to ${MAX_IMAGES_PER_UPLOAD} images at a time.`);
-  return;
-}
+  if (newFiles.length + files.length > MAX_IMAGES_PER_UPLOAD) {
+    setError(`You can upload up to ${MAX_IMAGES_PER_UPLOAD} images at a time.`);
+    return;
+  }
+
+  const invalidFile = files.find(file => !isAllowedImageFile(file));
+  if (invalidFile) {
+    setError(`${invalidFile.name} is not a supported image. Use JPG, PNG, GIF, WEBP, or AVIF.`);
+    return;
+  }
+
+  const oversizedFile = files.find(file => file.size > MAX_IMAGE_SIZE_BYTES);
+  if (oversizedFile) {
+    setError(`${oversizedFile.name} is too large. Maximum image size is ${MAX_IMAGE_SIZE_MB} MB.`);
+    return;
+  }
+
+  setError('');
+
+  const previews = files.map(file => ({
+    file,
+    preview: URL.createObjectURL(file),
+    label: '',
+  }));
+
+  setNewFiles(prev => [...prev, ...previews]);
+};
 
 const updateNewFileLabel = (i, label) =>
-  setNewFiles(prev => prev.map((f, j) => j === i ? { ...f, label } : f));
+  setNewFiles(prev => prev.map((f, j) =>
+    j === i ? { ...f, label } : f
+  ));
 
 const removeNewFile = i =>
   setNewFiles(prev => prev.filter((_, j) => j !== i));
 
-const removeExistingImage = async (imageId) => {
+const removeExistingImage = async imageId => {
   if (onDeleteImage) await onDeleteImage(imageId);
   setImages(prev => prev.filter(img => img.id !== imageId));
 };
-
-const invalidFile = files.find(file => !isAllowedImageFile(file));
-if (invalidFile) {
-  setError(`${invalidFile.name} is not a supported image. Use JPG, PNG, GIF, WEBP, or AVIF.`);
-  return;
-}
-
-const oversizedFile = files.find(file => file.size > MAX_IMAGE_SIZE_BYTES);
-if (oversizedFile) {
-  setError(`${oversizedFile.name} is too large. Maximum image size is ${MAX_IMAGE_SIZE_MB} MB.`);
-  return;
-}
-
-setError('');
-
-const previews = files.map(file => ({
-  file,
-  preview: URL.createObjectURL(file),
-  label: '',
-}));
-
-setNewFiles(prev => [...prev, ...previews]);
-};
-
   // ── Save ─────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!name.trim()) { setError('Project name is required.'); return; }
