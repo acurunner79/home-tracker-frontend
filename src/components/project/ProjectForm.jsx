@@ -44,7 +44,7 @@ function fmtMoney(v) {
   return '$' + Number(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-export default function ProjectForm({ project, onSave, onClose, onUploadImages, onDeleteImage }) {
+export default function ProjectForm({ project, onSave, onClose, onUploadImages, onUpdateImageLabel, onDeleteImage }) {
   const isEdit = Boolean(project?.id);
 
   const [name, setName]       = useState(project?.name || '');
@@ -114,6 +114,17 @@ if (newFiles.length + files.length > MAX_IMAGES_PER_UPLOAD) {
   setError(`You can upload up to ${MAX_IMAGES_PER_UPLOAD} images at a time.`);
   return;
 }
+
+const updateNewFileLabel = (i, label) =>
+  setNewFiles(prev => prev.map((f, j) => j === i ? { ...f, label } : f));
+
+const removeNewFile = i =>
+  setNewFiles(prev => prev.filter((_, j) => j !== i));
+
+const removeExistingImage = async (imageId) => {
+  if (onDeleteImage) await onDeleteImage(imageId);
+  setImages(prev => prev.filter(img => img.id !== imageId));
+};
 
 const invalidFile = files.find(file => !isAllowedImageFile(file));
 if (invalidFile) {
@@ -302,13 +313,36 @@ setNewFiles(prev => [...prev, ...previews]);
                     />
                     <button className="img-del" type="button"
                       onClick={() => removeExistingImage(img.id)}>✕</button>
-                    <input className="img-label-input" type="text"
+                      <input
+                        className="img-label-input"
+                        type="text"
+                        placeholder="Label…"
+                        value={img.label || ''}
+                        onChange={e => {
+                          const label = e.target.value;
+                          setImages(prev => prev.map(existing =>
+                            existing.id === img.id ? { ...existing, label } : existing
+                          ));
+                        }}
+                        onBlur={async e => {
+                          // Optimistically update label — full refresh happens on save
+                          const label = e.target.value;
+                          if (onUpdateImageLabel) {
+                            try {
+                              await onUpdateImageLabel(img.id, label);
+                            } catch (err) {
+                              setError(err.response?.data?.error || err.message || 'Failed to update image label');
+                            }
+                          }
+                        }}
+                      />
+                    {/* <input className="img-label-input" type="text"
                       placeholder="Label…" defaultValue={img.label || ''}
                       onBlur={e => {
                         if (e.target.value !== img.label) {
                           // Optimistically update label — full refresh happens on save
                         }
-                      }} />
+                      }} /> */}
                   </div>
                 ))}
                 {/* New files not yet uploaded */}

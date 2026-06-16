@@ -55,6 +55,23 @@ export function useProjects() {
     return images;
   };
 
+  const updateImageLabel = async (projectId, imageId, label) => {
+  const updated = await api.updateImageLabel(imageId, label);
+
+  setProjects(prev => prev.map(p =>
+    p.id === projectId
+      ? {
+          ...p,
+          images: (p.images || []).map(img =>
+            img.id === imageId ? { ...img, label: updated.label } : img
+          ),
+        }
+      : p
+  ));
+
+  return updated;
+};
+
   const deleteImage = async (projectId, imageId) => {
     await api.deleteImage(imageId);
     setProjects(prev => prev.map(p =>
@@ -67,6 +84,6 @@ export function useProjects() {
   return {
     projects, loading, error, refetch: fetch,
     createProject, updateProject, updateStage,
-    deleteProject, uploadImages, deleteImage,
+    deleteProject, uploadImages, updateImageLabel, deleteImage,
   };
 }

@@ -27,7 +27,7 @@ export default function Dashboard({ theme, toggleTheme }) {
   const {
     projects, loading, error, refetch,
     createProject, updateProject, deleteProject,
-    uploadImages, deleteImage,
+    uploadImages, updateImageLabel, deleteImage,
   } = useProjects();
 
   // 'stats' is the default/home page
@@ -181,6 +181,7 @@ export default function Dashboard({ theme, toggleTheme }) {
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditProject(null); }}
           onUploadImages={uploadImages}
+          onUpdateImageLabel={(imgId, label) => updateImageLabel(editProject?.id, imgId, label)}
           onDeleteImage={(imgId) => deleteImage(editProject?.id, imgId)}
         />
       )}
