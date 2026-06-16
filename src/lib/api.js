@@ -79,4 +79,17 @@ export const updateImageLabel = (imageId, label) =>
 export const deleteImage = imageId =>
   api.delete(`/images/${imageId}`).then(r => r.data);
 
+// ── Admin Users ───────────────────────────────────────────────────────
+export const getAdminUsers = () =>
+  api.get('/admin/users').then(r => r.data);
+
+export const createAdminUser = data =>
+  api.post('/admin/users', data).then(r => r.data);
+
+export const updateAdminUser = (id, data) =>
+  api.patch(`/admin/users/${id}`, data).then(r => r.data);
+
+export const resetAdminUserPassword = (id, password) =>
+  api.post(`/admin/users/${id}/reset-password`, { password }).then(r => r.data);
+
 export default api;

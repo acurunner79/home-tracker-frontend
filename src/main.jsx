@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
+import AdminUsersModal from './components/admin/AdminUsersModal';
 import { useTheme } from './hooks/useTheme';
 import { applyTheme } from './themes/themes';
 import { getMe, logout, AUTH_EXPIRED_EVENT, resetAuthExpiredNotice } from './lib/api';
@@ -18,6 +19,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [sessionMessage, setSessionMessage] = useState('');
+  const [showAdminUsers, setShowAdminUsers] = useState(false);
 
 const sessionCheckRef = useRef({
   lastCheck: 0,
@@ -188,6 +190,23 @@ useEffect(() => {
         }}
       >
         <span>{user.name || user.email}</span>
+
+        {user.role === 'admin' && (
+          <button
+            type="button"
+            onClick={() => setShowAdminUsers(true)}
+            style={{
+              border: '1px solid rgba(100,180,255,0.32)',
+              borderRadius: '999px',
+              background: 'rgba(40,120,220,0.22)',
+              color: '#f5f7fb',
+              padding: '0.35rem 0.65rem',
+              cursor: 'pointer',
+            }}
+          >
+            Users
+          </button>
+        )}
         <button
           type="button"
           onClick={handleLogout}
@@ -203,7 +222,13 @@ useEffect(() => {
           Logout
         </button>
       </div>
-
+      {showAdminUsers && user.role === 'admin' && (
+        <AdminUsersModal
+          currentUser={user}
+          onClose={() => setShowAdminUsers(false)}
+        />
+      )}
+      
       <Dashboard theme={theme} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
     </>
   );
