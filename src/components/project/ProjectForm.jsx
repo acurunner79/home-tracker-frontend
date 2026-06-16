@@ -8,6 +8,35 @@ const STAGES = [
   { value: 'completed',   label: 'Completed' },
 ];
 
+const MAX_IMAGE_SIZE_MB = 10;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const MAX_IMAGES_PER_UPLOAD = 20;
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+]);
+
+const ALLOWED_IMAGE_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.avif',
+];
+
+function isAllowedImageFile(file) {
+  const name = (file.name || '').toLowerCase();
+  const hasAllowedType = ALLOWED_IMAGE_TYPES.has(file.type);
+  const hasAllowedExtension = ALLOWED_IMAGE_EXTENSIONS.some(ext => name.endsWith(ext));
+
+  return hasAllowedType && hasAllowedExtension;
+}
+
 function totalCost(materials) {
   return materials.reduce((s, m) => s + (parseFloat(m.cost) || 0), 0);
 }
@@ -57,23 +86,57 @@ export default function ProjectForm({ project, onSave, onClose, onUploadImages, 
     setLinks(prev => prev.map((l, j) => j === i ? { ...l, [field]: val } : l));
 
   // ── Images ───────────────────────────────────────────────────────────
-  const handleFileChange = e => {
-    const files = Array.from(e.target.files);
-    const previews = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-      label: '',
-    }));
-    setNewFiles(prev => [...prev, ...previews]);
-    e.target.value = '';
-  };
-  const updateNewFileLabel = (i, label) =>
-    setNewFiles(prev => prev.map((f, j) => j === i ? { ...f, label } : f));
-  const removeNewFile = i => setNewFiles(prev => prev.filter((_, j) => j !== i));
-  const removeExistingImage = async (imageId) => {
-    if (onDeleteImage) await onDeleteImage(imageId);
-    setImages(prev => prev.filter(img => img.id !== imageId));
-  };
+  // const handleFileChange = e => {
+  //   const files = Array.from(e.target.files);
+  //   const previews = files.map(file => ({
+  //     file,
+  //     preview: URL.createObjectURL(file),
+  //     label: '',
+  //   }));
+  //   setNewFiles(prev => [...prev, ...previews]);
+  //   e.target.value = '';
+  // };
+  // const updateNewFileLabel = (i, label) =>
+  //   setNewFiles(prev => prev.map((f, j) => j === i ? { ...f, label } : f));
+  // const removeNewFile = i => setNewFiles(prev => prev.filter((_, j) => j !== i));
+  // const removeExistingImage = async (imageId) => {
+  //   if (onDeleteImage) await onDeleteImage(imageId);
+  //   setImages(prev => prev.filter(img => img.id !== imageId));
+  // };
+
+const handleFileChange = e => {
+const files = Array.from(e.target.files || []);
+e.target.value = '';
+
+if (!files.length) return;
+
+if (newFiles.length + files.length > MAX_IMAGES_PER_UPLOAD) {
+  setError(`You can upload up to ${MAX_IMAGES_PER_UPLOAD} images at a time.`);
+  return;
+}
+
+const invalidFile = files.find(file => !isAllowedImageFile(file));
+if (invalidFile) {
+  setError(`${invalidFile.name} is not a supported image. Use JPG, PNG, GIF, WEBP, or AVIF.`);
+  return;
+}
+
+const oversizedFile = files.find(file => file.size > MAX_IMAGE_SIZE_BYTES);
+if (oversizedFile) {
+  setError(`${oversizedFile.name} is too large. Maximum image size is ${MAX_IMAGE_SIZE_MB} MB.`);
+  return;
+}
+
+setError('');
+
+const previews = files.map(file => ({
+  file,
+  preview: URL.createObjectURL(file),
+  label: '',
+}));
+
+setNewFiles(prev => [...prev, ...previews]);
+};
 
   // ── Save ─────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -220,7 +283,8 @@ export default function ProjectForm({ project, onSave, onClose, onUploadImages, 
             <label>Images</label>
             <div className="upload-zone" onClick={() => fileInputRef.current.click()}>
               <div className="upload-icon">📷</div>
-              <p>Click to upload images (JPG, PNG, WEBP — max 20MB each)</p>
+                <p>Click to upload images (JPG, PNG, GIF, WEBP, AVIF — max 10MB each)</p>
+              {/* <p>Click to upload images (JPG, PNG, WEBP — max 20MB each)</p> */}
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" multiple
               style={{ display: 'none' }} onChange={handleFileChange} />
