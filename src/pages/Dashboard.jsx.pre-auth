@@ -91,24 +91,30 @@ export default function Dashboard({ theme, toggleTheme }) {
 
   return (
     <div className="app">
-      <Sidebar theme={theme} toggleTheme={toggleTheme}
+      <Sidebar
         projects={projects}
         navState={navState}
         setNavState={setNavState}
         activePage={activePage}
         setActivePage={setActivePage}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        user={user}
+        onOpenAdminUsers={() => setShowAdminUsers(true)}
       />
 
       <div className="main">
         <TopBar
-          title={pageTitle}
-          subtitle={pageSubtitle}
+          title={title}
+          subtitle={subtitle}
           theme={theme}
           toggleTheme={toggleTheme}
-          onAddProject={openAddProject}
-          onMenuToggle={() => setSidebarOpen(o => !o)}
+          onAddProject={handleAddProject}
+          onMenuToggle={handleMenuToggle}
+          user={user}
+          onOpenAdminUsers={() => setShowAdminUsers(true)}
         />
 
         {/* Stage filter — only on projects page */}

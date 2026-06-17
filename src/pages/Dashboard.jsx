@@ -23,7 +23,7 @@ function totalCost(mats) {
   return (mats || []).reduce((s, m) => s + (parseFloat(m.cost) || 0), 0);
 }
 
-export default function Dashboard({ theme, toggleTheme }) {
+export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }) {
   const {
     projects, loading, error, refetch,
     createProject, updateProject, deleteProject,
@@ -91,7 +91,7 @@ export default function Dashboard({ theme, toggleTheme }) {
 
   return (
     <div className="app">
-      <Sidebar theme={theme} toggleTheme={toggleTheme}
+      <Sidebar
         projects={projects}
         navState={navState}
         setNavState={setNavState}
@@ -99,6 +99,10 @@ export default function Dashboard({ theme, toggleTheme }) {
         setActivePage={setActivePage}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        user={user}
+        onOpenAdminUsers={onOpenAdminUsers}
       />
 
       <div className="main">
@@ -108,7 +112,9 @@ export default function Dashboard({ theme, toggleTheme }) {
           theme={theme}
           toggleTheme={toggleTheme}
           onAddProject={openAddProject}
-          onMenuToggle={() => setSidebarOpen(o => !o)}
+          onMenuToggle={() => setSidebarOpen(prev => !prev)}
+          user={user}
+          onOpenAdminUsers={onOpenAdminUsers}
         />
 
         {/* Stage filter — only on projects page */}

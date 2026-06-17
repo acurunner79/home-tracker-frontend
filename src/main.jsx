@@ -191,7 +191,7 @@ useEffect(() => {
       >
         <span>{user.name || user.email}</span>
 
-        {user.role === 'admin' && (
+        {/* {user.role === 'admin' && (
           <button
             type="button"
             onClick={() => setShowAdminUsers(true)}
@@ -206,7 +206,7 @@ useEffect(() => {
           >
             Users
           </button>
-        )}
+        )} */}
         <button
           type="button"
           onClick={handleLogout}
@@ -228,8 +228,14 @@ useEffect(() => {
           onClose={() => setShowAdminUsers(false)}
         />
       )}
-      
-      <Dashboard theme={theme} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
+
+      <Dashboard
+        theme={theme}
+        toggleTheme={toggleTheme}
+        user={user}
+        onLogout={handleLogout}
+        onOpenAdminUsers={() => setShowAdminUsers(true)}
+      />
     </>
   );
 }

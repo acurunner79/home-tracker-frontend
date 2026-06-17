@@ -2,7 +2,16 @@
 import React from 'react';
 import { THEMES } from '../../themes/themes';
 
-export default function TopBar({ title, subtitle, theme, toggleTheme, onAddProject, onMenuToggle }) {
+export default function TopBar({
+  title,
+  subtitle,
+  theme,
+  toggleTheme,
+  onAddProject,
+  onMenuToggle,
+  user,
+  onOpenAdminUsers,
+}) {
   const other = theme === 'darkside' ? 'lightside' : 'darkside';
   const otherTheme = THEMES[other];
 
@@ -20,9 +29,24 @@ export default function TopBar({ title, subtitle, theme, toggleTheme, onAddProje
 
       <div className="topbar-right">
         {/* Theme toggle — hidden on mobile, shown in sidebar instead */}
-        <button className="theme-toggle desktop-only" onClick={toggleTheme} title={`Switch to ${otherTheme.label}`}>
+        <button
+          className="theme-toggle desktop-only"
+          onClick={toggleTheme}
+          title={`Switch to ${otherTheme.label}`}
+        >
           {otherTheme.icon} {otherTheme.label}
         </button>
+
+        {user?.role === 'admin' && (
+          <button
+            className="btn desktop-only"
+            onClick={onOpenAdminUsers}
+            type="button"
+          >
+            Users
+          </button>
+        )}
+
         <button className="btn btn-primary" onClick={onAddProject}>
           + Add Project
         </button>
