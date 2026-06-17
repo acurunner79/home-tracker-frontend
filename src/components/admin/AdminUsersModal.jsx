@@ -21,6 +21,10 @@ export default function AdminUsersModal({ currentUser, onClose }) {
     role: 'user',
   });
 
+  const [passwordResetUser, setPasswordResetUser] = useState(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
+
   async function loadUsers() {
     setLoading(true);
     setError('');
@@ -97,23 +101,47 @@ export default function AdminUsersModal({ currentUser, onClose }) {
     }
   }
 
-  async function handleResetPassword(user) {
-    const password = window.prompt(`Enter a new password for ${user.email}. Minimum 12 characters.`);
+  function openPasswordReset(user) {
+    setError('');
+    setMessage('');
+    setPasswordResetUser(user);
+    setResetPassword('');
+    setResetPasswordConfirm('');
+  }
 
-    if (password === null) return;
+  function closePasswordReset() {
+    if (saving) return;
 
-    if (password.length < 12) {
-      setError('Password must be at least 12 characters.');
-      return;
-    }
+    setPasswordResetUser(null);
+    setResetPassword('');
+    setResetPasswordConfirm('');
+  }
 
-    setSaving(true);
+  async function handleResetPassword(e) {
+    e.preventDefault();
+
+    if (!passwordResetUser) return;
+
     setError('');
     setMessage('');
 
     try {
-      await resetAdminUserPassword(user.id, password);
-      setMessage(`Password reset for ${user.email}.`);
+      if (resetPassword.length < 12) {
+        throw new Error('Password must be at least 12 characters.');
+      }
+
+      if (resetPassword !== resetPasswordConfirm) {
+        throw new Error('Passwords do not match.');
+      }
+
+      setSaving(true);
+
+      await resetAdminUserPassword(passwordResetUser.id, resetPassword);
+
+      setMessage(`Password reset for ${passwordResetUser.email}.`);
+      setPasswordResetUser(null);
+      setResetPassword('');
+      setResetPasswordConfirm('');
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Failed to reset password');
     } finally {
@@ -208,6 +236,15 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       cursor: 'pointer',
       whiteSpace: 'nowrap',
     },
+    dangerButton: {
+      border: '1px solid rgba(255,110,110,0.45)',
+      borderRadius: '0.65rem',
+      background: 'rgba(150,45,45,0.45)',
+      color: '#fff',
+      padding: '0.65rem 0.85rem',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+    },
     alertError: {
       background: 'rgba(130, 30, 30, 0.85)',
       border: '1px solid rgba(255,255,255,0.14)',
@@ -251,6 +288,57 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       border: '1px solid rgba(255,255,255,0.12)',
       fontSize: '0.8rem',
     }),
+    resetOverlay: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 21000,
+      background: 'rgba(0,0,0,0.72)',
+      display: 'grid',
+      placeItems: 'center',
+      padding: '1rem',
+    },
+    resetModal: {
+      width: 'min(460px, 94vw)',
+      background: '#101522',
+      color: '#f5f7fb',
+      border: '1px solid rgba(255,255,255,0.16)',
+      borderRadius: '1rem',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
+      fontFamily: 'system-ui, sans-serif',
+      overflow: 'hidden',
+    },
+    resetHeader: {
+      padding: '1rem 1.25rem',
+      borderBottom: '1px solid rgba(255,255,255,0.12)',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: '1rem',
+    },
+    resetBody: {
+      padding: '1rem 1.25rem',
+      display: 'grid',
+      gap: '0.75rem',
+    },
+    resetFooter: {
+      padding: '1rem 1.25rem',
+      borderTop: '1px solid rgba(255,255,255,0.12)',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '0.5rem',
+    },
+    helperText: {
+      color: '#aab6cc',
+      fontSize: '0.85rem',
+      lineHeight: 1.4,
+    },
+    label: {
+      color: '#aab6cc',
+      fontSize: '0.78rem',
+      fontWeight: 700,
+      letterSpacing: '0.04em',
+      textTransform: 'uppercase',
+    },
   };
 
   return (
@@ -360,7 +448,7 @@ export default function AdminUsersModal({ currentUser, onClose }) {
                               type="button"
                               style={styles.button}
                               disabled={saving}
-                              onClick={() => handleResetPassword(user)}
+                              onClick={() => openPasswordReset(user)}
                             >
                               Reset Password
                             </button>
@@ -392,6 +480,64 @@ export default function AdminUsersModal({ currentUser, onClose }) {
           )}
         </div>
       </div>
+
+      {passwordResetUser && (
+        <div
+          style={styles.resetOverlay}
+          onClick={e => {
+            if (e.target === e.currentTarget) closePasswordReset();
+          }}
+        >
+          <form style={styles.resetModal} onSubmit={handleResetPassword}>
+            <div style={styles.resetHeader}>
+              <h3 style={{ ...styles.title, fontSize: '1rem' }}>Reset Password</h3>
+              <button type="button" style={styles.closeButton} onClick={closePasswordReset} disabled={saving}>
+                ✕
+              </button>
+            </div>
+
+            <div style={styles.resetBody}>
+              <div style={styles.helperText}>
+                Set a new password for <strong>{passwordResetUser.email}</strong>. Passwords must be at least 12 characters.
+              </div>
+
+              <label style={styles.label} htmlFor="reset-password">
+                New password
+              </label>
+              <input
+                id="reset-password"
+                style={styles.input}
+                type="password"
+                autoFocus
+                value={resetPassword}
+                onChange={e => setResetPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+
+              <label style={styles.label} htmlFor="reset-password-confirm">
+                Confirm password
+              </label>
+              <input
+                id="reset-password-confirm"
+                style={styles.input}
+                type="password"
+                value={resetPasswordConfirm}
+                onChange={e => setResetPasswordConfirm(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+
+            <div style={styles.resetFooter}>
+              <button type="button" style={styles.button} onClick={closePasswordReset} disabled={saving}>
+                Cancel
+              </button>
+              <button type="submit" style={styles.dangerButton} disabled={saving}>
+                {saving ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
