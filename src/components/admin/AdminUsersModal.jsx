@@ -45,6 +45,16 @@ export default function AdminUsersModal({ currentUser, onClose }) {
     loadUsers();
   }, []);
 
+  useEffect(() => {
+    if (!message) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setMessage('');
+    }, 4000);
+
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
   async function handleCreateUser(e) {
     e.preventDefault();
 
@@ -283,17 +293,64 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       cursor: 'pointer',
       whiteSpace: 'nowrap',
     },
-    alertError: {
-      background: 'rgba(130, 30, 30, 0.85)',
-      border: '1px solid rgba(255,255,255,0.14)',
-      borderRadius: '0.75rem',
-      padding: '0.75rem',
+    toastStack: {
+      position: 'sticky',
+      top: 0,
+      zIndex: 2,
+      display: 'grid',
+      gap: '0.5rem',
+      marginBottom: '0.25rem',
     },
-    alertSuccess: {
-      background: 'rgba(25, 100, 65, 0.85)',
-      border: '1px solid rgba(255,255,255,0.14)',
+    toastBase: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.6rem',
+      padding: '0.7rem 0.8rem',
       borderRadius: '0.75rem',
-      padding: '0.75rem',
+      border: '1px solid rgba(255,255,255,0.14)',
+      boxShadow: '0 10px 28px rgba(0,0,0,0.28)',
+      fontSize: '0.9rem',
+      lineHeight: 1.35,
+    },
+    toastError: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.6rem',
+      padding: '0.7rem 0.8rem',
+      borderRadius: '0.75rem',
+      border: '1px solid rgba(255,140,140,0.26)',
+      boxShadow: '0 10px 28px rgba(0,0,0,0.28)',
+      fontSize: '0.9rem',
+      lineHeight: 1.35,
+      background: 'rgba(130, 30, 30, 0.92)',
+      color: '#fff',
+    },
+    toastSuccess: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.6rem',
+      padding: '0.7rem 0.8rem',
+      borderRadius: '0.75rem',
+      border: '1px solid rgba(120,255,180,0.22)',
+      boxShadow: '0 10px 28px rgba(0,0,0,0.28)',
+      fontSize: '0.9rem',
+      lineHeight: 1.35,
+      background: 'rgba(25, 100, 65, 0.92)',
+      color: '#fff',
+    },
+    toastClose: {
+      marginLeft: 'auto',
+      border: 'none',
+      borderRadius: '999px',
+      background: 'rgba(255,255,255,0.12)',
+      color: '#fff',
+      width: '1.6rem',
+      height: '1.6rem',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
     },
     tableWrap: {
       overflowX: 'auto',
@@ -399,8 +456,29 @@ export default function AdminUsersModal({ currentUser, onClose }) {
         </div>
 
         <div style={styles.body}>
-          {error && <div style={styles.alertError}>{error}</div>}
-          {message && <div style={styles.alertSuccess}>{message}</div>}
+          {(error || message) && (
+            <div style={styles.toastStack}>
+              {error && (
+                <div style={styles.toastError}>
+                  <span>⚠</span>
+                  <span>{error}</span>
+                  <button type="button" style={styles.toastClose} onClick={() => setError('')}>
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {message && (
+                <div style={styles.toastSuccess}>
+                  <span>✓</span>
+                  <span>{message}</span>
+                  <button type="button" style={styles.toastClose} onClick={() => setMessage('')}>
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <form style={styles.form} onSubmit={handleCreateUser}>
             <input
