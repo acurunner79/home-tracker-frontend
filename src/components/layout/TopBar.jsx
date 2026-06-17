@@ -10,6 +10,7 @@ export default function TopBar({
   onAddProject,
   onMenuToggle,
   user,
+  onLogout,
   onOpenAdminUsers,
 }) {
   const other = theme === 'darkside' ? 'lightside' : 'darkside';
@@ -21,6 +22,7 @@ export default function TopBar({
         <button className="menu-toggle icon-btn" onClick={onMenuToggle} title="Menu">
           ☰
         </button>
+
         <div>
           <div className="topbar-title">{title}</div>
           {subtitle && <div className="topbar-sub">{subtitle}</div>}
@@ -33,6 +35,7 @@ export default function TopBar({
           className="theme-toggle desktop-only"
           onClick={toggleTheme}
           title={`Switch to ${otherTheme.label}`}
+          type="button"
         >
           {otherTheme.icon} {otherTheme.label}
         </button>
@@ -47,9 +50,21 @@ export default function TopBar({
           </button>
         )}
 
-        <button className="btn btn-primary" onClick={onAddProject}>
+        <button className="btn btn-primary" onClick={onAddProject} type="button">
           + Add Project
         </button>
+
+        <div className="topbar-account desktop-only">
+          <span>{user?.name || user?.email}</span>
+
+          <button
+            className="btn btn-sm"
+            type="button"
+            onClick={onLogout}
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

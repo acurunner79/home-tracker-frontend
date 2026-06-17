@@ -13,9 +13,11 @@ export default function Sidebar({
   theme,
   toggleTheme,
   user,
+  onLogout,
   onOpenAdminUsers,
 }) {
   const years = [...new Set(projects.map(p => p.year).filter(Boolean))].sort().reverse();
+
   const getRooms = year =>
     [...new Set(projects.filter(p => p.year === year).map(p => p.room).filter(Boolean))].sort();
 
@@ -25,17 +27,34 @@ export default function Sidebar({
   const setNav = (type, year = null, room = null) => {
     setActivePage('projects');
     setNavState({ type, year, room });
-    if (window.innerWidth < 768) onClose();
+
+    if (window.innerWidth < 768) {
+      onClose();
+    }
   };
 
-  const goTo = (page) => {
+  const goTo = page => {
     setActivePage(page);
-    if (window.innerWidth < 768) onClose();
+
+    if (window.innerWidth < 768) {
+      onClose();
+    }
   };
 
   const openUsers = () => {
     onOpenAdminUsers?.();
-    if (window.innerWidth < 768) onClose();
+
+    if (window.innerWidth < 768) {
+      onClose();
+    }
+  };
+
+  const handleLogout = () => {
+    onLogout?.();
+
+    if (window.innerWidth < 768) {
+      onClose();
+    }
   };
 
   return (
@@ -54,6 +73,7 @@ export default function Sidebar({
           <button
             className={`nav-item ${activePage === 'stats' ? 'active' : ''}`}
             onClick={() => goTo('stats')}
+            type="button"
           >
             <span className="nav-item-icon">📊</span>
             Dashboard
@@ -62,6 +82,7 @@ export default function Sidebar({
           <button
             className={`nav-item ${activePage === 'projects' && navState.type === 'all' ? 'active' : ''}`}
             onClick={() => setNav('all')}
+            type="button"
           >
             <span className="nav-item-icon">⊞</span>
             All Projects
@@ -70,7 +91,10 @@ export default function Sidebar({
 
           {years.length > 0 && (
             <>
-              <div className="sidebar-section-label" style={{ marginTop: 12 }}>By Year</div>
+              <div className="sidebar-section-label" style={{ marginTop: 12 }}>
+                By Year
+              </div>
+
               {years.map(year => {
                 const rooms = getRooms(year);
                 const yCount = projects.filter(p => p.year === year).length;
@@ -85,6 +109,7 @@ export default function Sidebar({
                     <button
                       className={`nav-item ${yActive ? 'active' : ''}`}
                       onClick={() => setNav('year', year)}
+                      type="button"
                     >
                       <span className="nav-item-icon">📅</span>
                       {year}
@@ -103,6 +128,7 @@ export default function Sidebar({
                             key={room}
                             className={`room-btn ${rActive ? 'active' : ''}`}
                             onClick={() => setNav('room', year, room)}
+                            type="button"
                           >
                             <span className="room-dot" />
                             {room}
@@ -121,6 +147,7 @@ export default function Sidebar({
               <div className="sidebar-section-label mobile-only" style={{ marginTop: 12 }}>
                 Admin
               </div>
+
               <button
                 className="nav-item mobile-only"
                 onClick={openUsers}
@@ -135,7 +162,11 @@ export default function Sidebar({
 
         <div className="sidebar-footer">
           {/* Theme toggle — only visible on mobile */}
-          <button className="theme-toggle mobile-only sidebar-theme-btn" onClick={toggleTheme}>
+          <button
+            className="theme-toggle mobile-only sidebar-theme-btn"
+            onClick={toggleTheme}
+            type="button"
+          >
             {otherTheme.icon} Switch to {otherTheme.label}
           </button>
 
@@ -143,10 +174,22 @@ export default function Sidebar({
             className="sidebar-add-btn"
             onClick={() => {
               window.dispatchEvent(new CustomEvent('ht:new-project'));
-              if (window.innerWidth < 768) onClose();
+
+              if (window.innerWidth < 768) {
+                onClose();
+              }
             }}
+            type="button"
           >
             + New Project
+          </button>
+
+          <button
+            className="theme-toggle mobile-only sidebar-theme-btn"
+            onClick={handleLogout}
+            type="button"
+          >
+            Logout
           </button>
         </div>
       </div>

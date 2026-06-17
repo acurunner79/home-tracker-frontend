@@ -11,53 +11,74 @@ import { useProjects } from '../hooks/useProjects';
 
 const STAGE_LABELS = {
   'not-started': 'Not Started',
-  'started':     'Started',
-  'on-hold':     'On Hold',
-  'completed':   'Completed',
+  'started': 'Started',
+  'on-hold': 'On Hold',
+  'completed': 'Completed',
 };
 
 function fmtMoney(v) {
   return '$' + Number(v || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
 function totalCost(mats) {
   return (mats || []).reduce((s, m) => s + (parseFloat(m.cost) || 0), 0);
 }
 
-export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }) {
+export default function Dashboard({
+  theme,
+  toggleTheme,
+  user,
+  onLogout,
+  onOpenAdminUsers,
+}) {
   const {
-    projects, loading, error, refetch,
-    createProject, updateProject, deleteProject,
-    uploadImages, updateImageLabel, deleteImage,
+    projects,
+    loading,
+    error,
+    refetch,
+    createProject,
+    updateProject,
+    deleteProject,
+    uploadImages,
+    updateImageLabel,
+    deleteImage,
   } = useProjects();
 
   // 'stats' is the default/home page
-  const [activePage, setActivePage]       = useState('stats');
-  const [navState, setNavState]           = useState({ type: 'all', year: null, room: null });
-  const [stageFilter, setStageFilter]     = useState('all');
-  const [sidebarOpen, setSidebarOpen]     = useState(false);
+  const [activePage, setActivePage] = useState('stats');
+  const [navState, setNavState] = useState({ type: 'all', year: null, room: null });
+  const [stageFilter, setStageFilter] = useState('all');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [showForm, setShowForm]               = useState(false);
-  const [editProject, setEditProject]         = useState(null);
-  const [previewProject, setPreviewProject]   = useState(null);
-  const [deleteTarget, setDeleteTarget]       = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editProject, setEditProject] = useState(null);
+  const [previewProject, setPreviewProject] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Listen for new-project event from Sidebar button
   useEffect(() => {
-    const handler = () => { setEditProject(null); setShowForm(true); };
+    const handler = () => {
+      setEditProject(null);
+      setShowForm(true);
+    };
+
     window.addEventListener('ht:new-project', handler);
+
     return () => window.removeEventListener('ht:new-project', handler);
   }, []);
 
   // ── Filtering ──────────────────────────────────────────────────────
-  const filtered = projects.filter(p => {
-    if (navState.type === 'year' && p.year !== navState.year) return false;
-    if (navState.type === 'room' && (p.year !== navState.year || p.room !== navState.room)) return false;
-    if (stageFilter !== 'all' && p.stage !== stageFilter) return false;
-    return true;
-  }).sort((a, b) =>
-    (b.year || '').localeCompare(a.year || '') ||
-    (b.createdAt || '').localeCompare(a.createdAt || '')
-  );
+  const filtered = projects
+    .filter(p => {
+      if (navState.type === 'year' && p.year !== navState.year) return false;
+      if (navState.type === 'room' && (p.year !== navState.year || p.room !== navState.room)) return false;
+      if (stageFilter !== 'all' && p.stage !== stageFilter) return false;
+      return true;
+    })
+    .sort((a, b) =>
+      (b.year || '').localeCompare(a.year || '') ||
+      (b.createdAt || '').localeCompare(a.createdAt || '')
+    );
 
   // ── Header text ────────────────────────────────────────────────────
   let pageTitle = 'Dashboard';
@@ -67,18 +88,20 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
     if (navState.type === 'all') pageTitle = 'All Projects';
     else if (navState.type === 'year') pageTitle = `${navState.year} Projects`;
     else pageTitle = `${navState.room} — ${navState.year}`;
+
     const totalSpend = filtered.reduce((s, p) => s + totalCost(p.materials), 0);
     pageSubtitle = `${filtered.length} project${filtered.length !== 1 ? 's' : ''} · Total: ${fmtMoney(totalSpend)}`;
   }
 
   // ── Handlers ───────────────────────────────────────────────────────
-  const handleSave = async (data) => {
+  const handleSave = async data => {
     if (editProject?.id) return await updateProject(editProject.id, data);
     return await createProject(data);
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
     await deleteProject(deleteTarget.id);
     setDeleteTarget(null);
     setPreviewProject(null);
@@ -102,6 +125,7 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
         theme={theme}
         toggleTheme={toggleTheme}
         user={user}
+        onLogout={onLogout}
         onOpenAdminUsers={onOpenAdminUsers}
       />
 
@@ -114,6 +138,7 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
           onAddProject={openAddProject}
           onMenuToggle={() => setSidebarOpen(prev => !prev)}
           user={user}
+          onLogout={onLogout}
           onOpenAdminUsers={onOpenAdminUsers}
         />
 
@@ -150,7 +175,9 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
             ) : error ? (
               <div className="error-banner" style={{ margin: '24px 0' }}>
                 ⚠ {error} —{' '}
-                <button className="btn btn-sm btn-ghost" onClick={refetch}>Retry</button>
+                <button className="btn btn-sm btn-ghost" onClick={refetch}>
+                  Retry
+                </button>
               </div>
             ) : (
               <div className="projects-grid">
@@ -169,7 +196,10 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
                       key={p.id}
                       project={p}
                       onClick={() => setPreviewProject(p)}
-                      onEdit={() => { setEditProject(p); setShowForm(true); }}
+                      onEdit={() => {
+                        setEditProject(p);
+                        setShowForm(true);
+                      }}
                       onDelete={() => setDeleteTarget(p)}
                     />
                   ))
@@ -185,10 +215,13 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
         <ProjectForm
           project={editProject}
           onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditProject(null); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditProject(null);
+          }}
           onUploadImages={uploadImages}
           onUpdateImageLabel={(imgId, label) => updateImageLabel(editProject?.id, imgId, label)}
-          onDeleteImage={(imgId) => deleteImage(editProject?.id, imgId)}
+          onDeleteImage={imgId => deleteImage(editProject?.id, imgId)}
         />
       )}
 
@@ -197,7 +230,11 @@ export default function Dashboard({ theme, toggleTheme, user, onOpenAdminUsers }
         <ProjectPreview
           project={previewProject}
           onClose={() => setPreviewProject(null)}
-          onEdit={() => { setEditProject(previewProject); setPreviewProject(null); setShowForm(true); }}
+          onEdit={() => {
+            setEditProject(previewProject);
+            setPreviewProject(null);
+            setShowForm(true);
+          }}
           onDelete={() => setDeleteTarget(previewProject)}
         />
       )}
