@@ -25,6 +25,8 @@ export default function AdminUsersModal({ currentUser, onClose }) {
   const [resetPassword, setResetPassword] = useState('');
   const [resetPasswordConfirm, setResetPasswordConfirm] = useState('');
 
+  const [disableConfirmUser, setDisableConfirmUser] = useState(null);
+
   async function loadUsers() {
     setLoading(true);
     setError('');
@@ -96,6 +98,42 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       setMessage('User updated successfully.');
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Failed to update user');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openDisableConfirm(user) {
+    setError('');
+    setMessage('');
+    setDisableConfirmUser(user);
+  }
+
+  function closeDisableConfirm() {
+    if (saving) return;
+    setDisableConfirmUser(null);
+  }
+
+  async function handleConfirmDisable(e) {
+    e.preventDefault();
+
+    if (!disableConfirmUser) return;
+
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await updateAdminUser(disableConfirmUser.id, { active: false });
+
+      setUsers(prev => prev.map(user =>
+        user.id === disableConfirmUser.id ? response.user : user
+      ));
+
+      setMessage(`${disableConfirmUser.email} has been disabled.`);
+      setDisableConfirmUser(null);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to disable user');
     } finally {
       setSaving(false);
     }
@@ -332,6 +370,15 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       fontSize: '0.85rem',
       lineHeight: 1.4,
     },
+    warningText: {
+      color: '#ffd3d3',
+      fontSize: '0.9rem',
+      lineHeight: 1.45,
+      background: 'rgba(150,45,45,0.22)',
+      border: '1px solid rgba(255,120,120,0.22)',
+      borderRadius: '0.75rem',
+      padding: '0.75rem',
+    },
     label: {
       color: '#aab6cc',
       fontSize: '0.78rem',
@@ -457,7 +504,13 @@ export default function AdminUsersModal({ currentUser, onClose }) {
                               type="button"
                               style={styles.button}
                               disabled={saving || isSelf}
-                              onClick={() => handleUpdateUser(user.id, { active: !user.active })}
+                              onClick={() => {
+                                if (user.active) {
+                                  openDisableConfirm(user);
+                                } else {
+                                  handleUpdateUser(user.id, { active: true });
+                                }
+                              }}
                             >
                               {user.active ? 'Disable' : 'Enable'}
                             </button>
@@ -480,6 +533,44 @@ export default function AdminUsersModal({ currentUser, onClose }) {
           )}
         </div>
       </div>
+
+      {disableConfirmUser && (
+        <div
+          style={styles.resetOverlay}
+          onClick={e => {
+            if (e.target === e.currentTarget) closeDisableConfirm();
+          }}
+        >
+          <form style={styles.resetModal} onSubmit={handleConfirmDisable}>
+            <div style={styles.resetHeader}>
+              <h3 style={{ ...styles.title, fontSize: '1rem' }}>Disable User?</h3>
+              <button type="button" style={styles.closeButton} onClick={closeDisableConfirm} disabled={saving}>
+                ✕
+              </button>
+            </div>
+
+            <div style={styles.resetBody}>
+              <div style={styles.warningText}>
+                This will prevent <strong>{disableConfirmUser.email}</strong> from logging in.
+                Existing sessions may remain valid until they expire or are refreshed.
+              </div>
+
+              <div style={styles.helperText}>
+                Use this when an account should temporarily lose access. You can enable the user again later.
+              </div>
+            </div>
+
+            <div style={styles.resetFooter}>
+              <button type="button" style={styles.button} onClick={closeDisableConfirm} disabled={saving}>
+                Cancel
+              </button>
+              <button type="submit" style={styles.dangerButton} disabled={saving}>
+                {saving ? 'Disabling…' : 'Disable User'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {passwordResetUser && (
         <div
