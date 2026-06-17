@@ -13,6 +13,7 @@ export default function AdminUsersModal({ currentUser, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
 
   const [newUser, setNewUser] = useState({
     email: '',
@@ -43,6 +44,16 @@ export default function AdminUsersModal({ currentUser, onClose }) {
 
   useEffect(() => {
     loadUsers();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
@@ -208,13 +219,13 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       padding: '1rem',
     },
     modal: {
-      width: 'min(980px, 96vw)',
-      maxHeight: '88vh',
+      width: isMobile ? 'min(100%, 94vw)' : 'min(980px, 96vw)',
+      maxHeight: isMobile ? '82vh' : '88vh',
       overflow: 'auto',
       background: '#101522',
       color: '#f5f7fb',
       border: '1px solid rgba(255,255,255,0.14)',
-      borderRadius: '1rem',
+      borderRadius: isMobile ? '0.9rem' : '1rem',
       boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
       fontFamily: 'system-ui, sans-serif',
     },
@@ -222,11 +233,15 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '1rem 1.25rem',
+      padding: isMobile ? '0.9rem 1rem' : '1rem 1.25rem',
       borderBottom: '1px solid rgba(255,255,255,0.12)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 4,
+      background: '#101522',
     },
     body: {
-      padding: '1rem 1.25rem',
+      padding: isMobile ? '0.9rem 1rem 1rem' : '1rem 1.25rem',
       display: 'grid',
       gap: '1rem',
     },
@@ -244,9 +259,17 @@ export default function AdminUsersModal({ currentUser, onClose }) {
     },
     form: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto',
-      gap: '0.5rem',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, minmax(0, 1fr)) auto',
+      gap: isMobile ? '0.75rem' : '0.5rem',
       alignItems: 'end',
+      border: isMobile ? '1px solid rgba(255,255,255,0.12)' : 'none',
+      borderRadius: isMobile ? '0.85rem' : 0,
+      padding: isMobile ? '0.85rem' : 0,
+      background: isMobile ? 'rgba(255,255,255,0.035)' : 'transparent',
+    },
+    formField: {
+      display: 'grid',
+      gap: '0.35rem',
     },
     input: {
       width: '100%',
@@ -393,7 +416,7 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       padding: '1rem',
     },
     resetModal: {
-      width: 'min(460px, 94vw)',
+      width: isMobile ? 'min(100%, 92vw)' : 'min(460px, 94vw)',
       background: '#101522',
       color: '#f5f7fb',
       border: '1px solid rgba(255,255,255,0.16)',
@@ -443,6 +466,77 @@ export default function AdminUsersModal({ currentUser, onClose }) {
       letterSpacing: '0.04em',
       textTransform: 'uppercase',
     },
+    mobileSectionTitle: {
+      color: '#aab6cc',
+      fontSize: '0.78rem',
+      fontWeight: 800,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      marginTop: '0.25rem',
+    },
+    mobileUserList: {
+      display: 'grid',
+      gap: '0.75rem',
+    },
+    mobileUserCard: {
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: '0.9rem',
+      background: 'rgba(255,255,255,0.035)',
+      padding: '0.85rem',
+      display: 'grid',
+      gap: '0.75rem',
+    },
+    mobileUserHeader: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: '0.75rem',
+    },
+    mobileUserName: {
+      fontWeight: 800,
+      fontSize: '1rem',
+      lineHeight: 1.2,
+      wordBreak: 'break-word',
+    },
+    mobileUserEmail: {
+      color: '#aab6cc',
+      fontSize: '0.86rem',
+      marginTop: '0.2rem',
+      wordBreak: 'break-word',
+    },
+    mobileUserMetaGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '0.65rem',
+    },
+    mobileMetaLabel: {
+      color: '#aab6cc',
+      fontSize: '0.72rem',
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      marginBottom: '0.25rem',
+    },
+    mobileActions: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '0.5rem',
+    },
+    mobileFullButton: {
+      width: '100%',
+      justifyContent: 'center',
+      textAlign: 'center',
+    },
+    modalBottomBar: {
+      position: 'sticky',
+      bottom: 0,
+      zIndex: 3,
+      display: isMobile ? 'flex' : 'none',
+      justifyContent: 'center',
+      padding: '0.75rem 1rem',
+      borderTop: '1px solid rgba(255,255,255,0.12)',
+      background: '#101522',
+    },
   };
 
   return (
@@ -480,47 +574,146 @@ export default function AdminUsersModal({ currentUser, onClose }) {
             </div>
           )}
 
+          {isMobile && <div style={styles.mobileSectionTitle}>Create User</div>}
+
           <form style={styles.form} onSubmit={handleCreateUser}>
-            <input
-              style={styles.input}
-              type="email"
-              placeholder="Email"
-              value={newUser.email}
-              onChange={e => setNewUser(prev => ({ ...prev, email: e.target.value }))}
-            />
+            <div style={styles.formField}>
+              {isMobile && <label style={styles.label} htmlFor="new-user-email">Email</label>}
+              <input
+                id="new-user-email"
+                style={styles.input}
+                type="email"
+                placeholder="Email"
+                value={newUser.email}
+                onChange={e => setNewUser(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
 
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Name"
-              value={newUser.name}
-              onChange={e => setNewUser(prev => ({ ...prev, name: e.target.value }))}
-            />
+            <div style={styles.formField}>
+              {isMobile && <label style={styles.label} htmlFor="new-user-name">Name</label>}
+              <input
+                id="new-user-name"
+                style={styles.input}
+                type="text"
+                placeholder="Name"
+                value={newUser.name}
+                onChange={e => setNewUser(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
 
-            <input
-              style={styles.input}
-              type="password"
-              placeholder="Temporary password"
-              value={newUser.password}
-              onChange={e => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-            />
+            <div style={styles.formField}>
+              {isMobile && <label style={styles.label} htmlFor="new-user-password">Temporary Password</label>}
+              <input
+                id="new-user-password"
+                style={styles.input}
+                type="password"
+                placeholder="Temporary password"
+                value={newUser.password}
+                onChange={e => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+              />
+            </div>
 
-            <select
-              style={styles.select}
-              value={newUser.role}
-              onChange={e => setNewUser(prev => ({ ...prev, role: e.target.value }))}
+            <div style={styles.formField}>
+              {isMobile && <label style={styles.label} htmlFor="new-user-role">Role</label>}
+              <select
+                id="new-user-role"
+                style={styles.select}
+                value={newUser.role}
+                onChange={e => setNewUser(prev => ({ ...prev, role: e.target.value }))}
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              style={isMobile ? { ...styles.primaryButton, ...styles.mobileFullButton } : styles.primaryButton}
+              disabled={saving}
             >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-
-            <button type="submit" style={styles.primaryButton} disabled={saving}>
               {saving ? 'Saving…' : 'Create'}
             </button>
           </form>
 
           {loading ? (
             <div>Loading users...</div>
+          ) : isMobile ? (
+            <>
+              <div style={styles.mobileSectionTitle}>Users</div>
+
+              <div style={styles.mobileUserList}>
+                {users.map(user => {
+                  const isSelf = user.id === currentUser?.id;
+
+                  return (
+                    <div key={user.id} style={styles.mobileUserCard}>
+                      <div style={styles.mobileUserHeader}>
+                        <div>
+                          <div style={styles.mobileUserName}>{user.name || 'Unnamed User'}</div>
+                          <div style={styles.mobileUserEmail}>{user.email}</div>
+                        </div>
+
+                        <span style={styles.badge(user.active)}>
+                          {user.active ? 'Active' : 'Disabled'}
+                        </span>
+                      </div>
+
+                      <div style={styles.mobileUserMetaGrid}>
+                        <div>
+                          <div style={styles.mobileMetaLabel}>Role</div>
+                          <select
+                            style={styles.select}
+                            value={user.role}
+                            disabled={saving || isSelf}
+                            onChange={e => handleUpdateUser(user.id, { role: e.target.value })}
+                          >
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={styles.mobileMetaLabel}>Created</div>
+                          <div>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</div>
+                        </div>
+                      </div>
+
+                      <div style={styles.mobileActions}>
+                        <button
+                          type="button"
+                          style={{ ...styles.button, ...styles.mobileFullButton }}
+                          disabled={saving}
+                          onClick={() => openPasswordReset(user)}
+                        >
+                          Reset Password
+                        </button>
+
+                        <button
+                          type="button"
+                          style={{ ...styles.button, ...styles.mobileFullButton }}
+                          disabled={saving || isSelf}
+                          onClick={() => {
+                            if (user.active) {
+                              openDisableConfirm(user);
+                            } else {
+                              handleUpdateUser(user.id, { active: true });
+                            }
+                          }}
+                        >
+                          {user.active ? 'Disable' : 'Enable'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {!users.length && (
+                  <div style={styles.mobileUserCard}>
+                    No users found.
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <div style={styles.tableWrap}>
               <table style={styles.table}>
@@ -609,6 +802,16 @@ export default function AdminUsersModal({ currentUser, onClose }) {
               </table>
             </div>
           )}
+
+          <div style={styles.modalBottomBar}>
+            <button
+              type="button"
+              style={{ ...styles.button, width: '100%', justifyContent: 'center' }}
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
 
