@@ -1095,3 +1095,88 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }
 }
+
+/* ── Mobile horizontal overflow cleanup ───────────────────────────── */
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app,
+.main,
+.main-scroll,
+.topbar,
+.filterbar,
+.stats-cards,
+.charts-row,
+.chart-card,
+.projects-grid {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .app {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .main {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .main-scroll {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    width: 100%;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  .topbar-left {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .topbar-right {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .topbar-title {
+    max-width: 48vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-right .btn-primary {
+    max-width: 118px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .modal,
+  .overlay,
+  .tableWrap {
+    max-width: 100vw;
+  }
+
+  table {
+    max-width: 100%;
+  }
+
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+}
